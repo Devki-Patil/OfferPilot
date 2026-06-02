@@ -1,5 +1,13 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/types/database"
+import {
+  formatErrorForLog,
+  formatPostgrestErrorForLog,
+  getPostgrestFailureReason,
+  getProfileErrorMessage,
+  getUnknownFailureReason,
+  type ProfileFailureReason,
+} from "./errors"
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"]
 type ProfileInsert = Database["public"]["Tables"]["profiles"]["Insert"]
@@ -16,14 +24,12 @@ export type ProfileQueryResult =
   | {
       data: null
       error: string
-      reason: "not-configured" | "connection" | "schema" | "unknown"
+      reason: ProfileFailureReason
       status: "error"
     }
 
-const profileLookupTimeoutMs = 5000
-const profileWriteTimeoutMs = 7000
-const profileLoadErrorMessage =
-  "Profile data is temporarily unavailable. The dashboard is still available; retry in a moment."
+const profileLookupTimeoutMs = 15000
+const profileWriteTimeoutMs = 15000
 
 export function createDemoProfile(seed: ProfileSeed = {}): Profile {
   const now = new Date().toISOString()
@@ -147,24 +153,26 @@ async function loadProfileByClerkId(
     )
 
     if (error) {
-      const reason = error.code === "42P01" ? "schema" : "connection"
+      const reason = getPostgrestFailureReason(error)
+      const details = formatPostgrestErrorForLog(error)
+
       console.error("Failed to load profile from Supabase.", {
         clerkUserId,
-        code: error.code,
-        message: error.message,
+        details,
+        reason,
       })
       return {
         data: null,
-        error:
-          reason === "schema"
-            ? "The Supabase profiles table is missing. Apply supabase/schema.sql, then retry."
-            : profileLoadErrorMessage,
+        error: getProfileErrorMessage(reason, details),
         reason,
         status: "error",
       }
     }
 
     if (!data) {
+      console.info("No profile row found for Clerk user. Creating profile.", {
+        clerkUserId,
+      })
       return {
         data: null,
         error: null,
@@ -178,14 +186,18 @@ async function loadProfileByClerkId(
       status: "ready",
     }
   } catch (error) {
+    const details = formatErrorForLog(error)
+    const reason = getUnknownFailureReason(error)
+
     console.error("Failed to load profile from Supabase.", {
       clerkUserId,
-      error,
+      details,
+      reason,
     })
     return {
       data: null,
-      error: profileLoadErrorMessage,
-      reason: "connection",
+      error: getProfileErrorMessage(reason, details),
+      reason,
       status: "error",
     }
   }
@@ -231,21 +243,26 @@ async function createProfileForClerkUser(
         return loadProfileByClerkId(clerkUserId)
       }
 
+      const reason = getPostgrestFailureReason(error)
+      const details = formatPostgrestErrorForLog(error)
+
       console.error("Failed to create profile in Supabase.", {
         clerkUserId,
-        code: error.code,
-        message: error.message,
+        details,
+        reason,
       })
       return {
         data: null,
-        error:
-          error.code === "42P01"
-            ? "The Supabase profiles table is missing. Apply supabase/schema.sql, then retry."
-            : profileLoadErrorMessage,
-        reason: error.code === "42P01" ? "schema" : "connection",
+        error: getProfileErrorMessage(reason, details),
+        reason,
         status: "error",
       }
     }
+
+    console.info("Created Supabase profile for Clerk user.", {
+      clerkUserId,
+      profileId: data.id,
+    })
 
     return {
       data: normalizeProfile(data, { clerkUserId, ...seed }),
@@ -253,14 +270,18 @@ async function createProfileForClerkUser(
       status: "ready",
     }
   } catch (error) {
+    const details = formatErrorForLog(error)
+    const reason = getUnknownFailureReason(error)
+
     console.error("Failed to create profile in Supabase.", {
       clerkUserId,
-      error,
+      details,
+      reason,
     })
     return {
       data: null,
-      error: profileLoadErrorMessage,
-      reason: "connection",
+      error: getProfileErrorMessage(reason, details),
+      reason,
       status: "error",
     }
   }

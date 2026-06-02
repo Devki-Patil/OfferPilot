@@ -1,4 +1,9 @@
 import { createSupabaseAdminClient, getSupabaseAdminConfigStatus } from "@/lib/supabase/admin"
+import {
+  formatErrorForLog,
+  formatPostgrestErrorForLog,
+  getPostgrestFailureReason,
+} from "./errors"
 
 export type ProfileStoreHealth =
   | {
@@ -54,6 +59,11 @@ export async function getProfileStoreHealth(): Promise<ProfileStoreHealth> {
 
     if (error) {
       if (error.code === "42P01") {
+        console.error("Supabase profile health check failed.", {
+          details: formatPostgrestErrorForLog(error),
+          reason: "schema",
+        })
+
         return {
           config,
           description:
@@ -64,15 +74,17 @@ export async function getProfileStoreHealth(): Promise<ProfileStoreHealth> {
         }
       }
 
+      const reason = getPostgrestFailureReason(error)
+      const details = formatPostgrestErrorForLog(error)
+
       console.error("Supabase profile health check failed.", {
-        code: error.code,
-        message: error.message,
+        details,
+        reason,
       })
 
       return {
         config,
-        description:
-          "The dashboard will use demo data while Supabase recovers or credentials are refreshed.",
+        description: `Supabase profile health check failed: ${details}`,
         profileCount: null,
         status: "unavailable",
         title: "Supabase unavailable",
@@ -87,12 +99,15 @@ export async function getProfileStoreHealth(): Promise<ProfileStoreHealth> {
       title: "Profiles table ready",
     }
   } catch (error) {
-    console.error("Supabase profile health check failed.", error)
+    const details = formatErrorForLog(error)
+
+    console.error("Supabase profile health check failed.", {
+      details,
+    })
 
     return {
       config,
-      description:
-        "The dashboard will keep working with fallback profile data until Supabase responds.",
+      description: `Supabase profile health check failed: ${details}`,
       profileCount: null,
       status: "unavailable",
       title: "Supabase unavailable",

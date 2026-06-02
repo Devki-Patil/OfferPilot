@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { JobRecommendationCard } from "@/components/jobs/job-recommendation-card";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +30,11 @@ import {
   getOrCreateProfileResultByClerkId,
   normalizeProfile,
 } from "@/features/profile/queries";
-import { isClerkConfigured } from "@/lib/clerk/config";
-import { isSupabaseAdminConfigured } from "@/lib/supabase/admin";
+import { clerkPaths, isClerkConfigured } from "@/lib/clerk/config";
+import {
+  getSupabaseAdminConfigStatus,
+  isSupabaseAdminConfigured,
+} from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -67,26 +71,21 @@ export default async function DashboardPage() {
     primaryEmail;
 
   if (!userId) {
-    return (
-      <DashboardContent
-        notice={{
-          title: "Signed-out demo",
-          description:
-            "Sign in to load saved profile data. Demo data is active so the dashboard remains usable.",
-          variant: "warning",
-        }}
-        profile={createDemoProfile({ email: primaryEmail, fullName })}
-      />
-    );
+    redirect(clerkPaths.signInUrl);
   }
 
   if (!isSupabaseAdminConfigured()) {
+    const supabaseConfig = getSupabaseAdminConfigStatus();
+    const description =
+      supabaseConfig.url === "invalid"
+        ? "NEXT_PUBLIC_SUPABASE_URL is invalid. It must be the exact Supabase project URL, for example https://<project-ref>.supabase.co. Demo data is active for now."
+        : "Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable saved profile data. Demo data is active for now.";
+
     return (
       <DashboardContent
         notice={{
           title: "Supabase not configured",
-          description:
-            "Add NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to enable saved profile data. Demo data is active for now.",
+          description,
           variant: "warning",
         }}
         profile={createDemoProfile({ email: primaryEmail, fullName })}

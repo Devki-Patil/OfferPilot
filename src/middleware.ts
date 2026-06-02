@@ -4,6 +4,13 @@ import { NextResponse } from "next/server";
 import { clerkPaths, isClerkConfigured } from "@/lib/clerk/config";
 
 const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/offers(.*)",
+  "/scoring(.*)",
+  "/pipeline(.*)",
+  "/team(.*)",
+  "/profile(.*)",
+  "/settings(.*)",
   "/onboarding(.*)",
 ]);
 
