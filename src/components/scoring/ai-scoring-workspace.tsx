@@ -4,55 +4,24 @@ import type { LucideIcon } from "lucide-react"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import type { ResumeScoreSummary } from "@/features/scoring/queries"
 
-const scoreCards = [
-  {
-    label: "Resume score",
-    value: 88,
-    detail: "Clear seniority and measurable product engineering impact.",
-  },
-  {
-    label: "Skills match",
-    value: 91,
-    detail: "React, TypeScript, AI workflows, and product strategy overlap strongly.",
-  },
-  {
-    label: "ATS score",
-    value: 84,
-    detail: "Keyword coverage is solid with a few missing domain phrases.",
-  },
-]
-
-const strengths = [
-  "Strong product-engineering positioning with clear AI workflow evidence.",
-  "Technical keywords are present in the highest-value resume sections.",
-  "Projects show ownership across discovery, implementation, and rollout.",
-]
-
-const weaknesses = [
-  "Add more quantified outcomes to the two newest project bullets.",
-  "Include target-company vocabulary for platform, security, or fintech roles.",
-  "Move contact and portfolio links closer to the resume header.",
-]
-
-const recommendations = [
-  "Create one resume variant for product engineering and one for AI workflow roles.",
-  "Add a short impact line under each project with metrics, user count, or cycle-time savings.",
-  "Mirror the exact title from each job description in the resume summary before applying.",
-]
-
-export function AiScoringWorkspace() {
+export function AiScoringWorkspace({
+  initialSummary,
+}: {
+  initialSummary: ResumeScoreSummary
+}) {
   return (
     <section className="grid gap-6">
       <PageHeader
         badge="AI Scoring"
-        description="Mock scoring keeps the page useful until live resume parsing and scoring APIs are connected."
+        description="Resume scoring reflects the latest Supabase score when available, with demo fallback data for setup mode."
         icon={Sparkles}
         title="AI Scoring"
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        {scoreCards.map((card) => (
+        {initialSummary.scoreCards.map((card) => (
           <Card key={card.label}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between gap-4">
@@ -83,19 +52,19 @@ export function AiScoringWorkspace() {
               Resume intelligence
             </CardTitle>
             <CardDescription>
-              Strengths and weaknesses are mocked from the profile signal model.
+              Strengths and weaknesses from the latest resume scoring run.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">
             <SignalList
               icon={CheckCircle2}
-              items={strengths}
+              items={initialSummary.strengths}
               title="Strengths"
               variant="success"
             />
             <SignalList
               icon={TriangleAlert}
-              items={weaknesses}
+              items={initialSummary.weaknesses}
               title="Weaknesses"
               variant="warning"
             />
@@ -113,7 +82,7 @@ export function AiScoringWorkspace() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
-            {recommendations.map((recommendation, index) => (
+            {initialSummary.recommendations.map((recommendation, index) => (
               <div
                 key={recommendation}
                 className="rounded-lg border border-border bg-graphite p-4"

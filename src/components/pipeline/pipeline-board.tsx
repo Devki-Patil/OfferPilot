@@ -7,13 +7,12 @@ import { EmptyState } from "@/components/dashboard/empty-state"
 import { PageHeader } from "@/components/dashboard/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { mockPipelineCards } from "@/features/offers/data"
 import { pipelineStages, type PipelineCard, type PipelineStage } from "@/features/offers/types"
 
 const storageKey = "offerpilot.pipeline.v1"
 
-export function PipelineBoard() {
-  const [cards, setCards] = useState<PipelineCard[]>(mockPipelineCards)
+export function PipelineBoard({ initialCards }: { initialCards: PipelineCard[] }) {
+  const [cards, setCards] = useState<PipelineCard[]>(initialCards)
   const [draggedId, setDraggedId] = useState<string | null>(null)
 
   useEffect(() => {

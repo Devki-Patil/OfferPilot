@@ -1,4 +1,0 @@
-Failed to proxy http://localhost:3007/dashboard [Error: socket hang up] { code: 'ECONNRESET' }
-[Error: socket hang up] { code: 'ECONNRESET' }
-Failed to proxy http://localhost:3007/profile [Error: socket hang up] { code: 'ECONNRESET' }
-[Error: socket hang up] { code: 'ECONNRESET' }

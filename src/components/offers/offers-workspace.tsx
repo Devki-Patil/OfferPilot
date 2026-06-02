@@ -28,7 +28,6 @@ import {
   ModalTitle,
   ModalTrigger,
 } from "@/components/ui/modal"
-import { mockOffers } from "@/features/offers/data"
 import { offerStatuses, type Offer, type OfferStatus } from "@/features/offers/types"
 
 const storageKey = "offerpilot.offers.v1"
@@ -46,8 +45,8 @@ const emptyOffer: Omit<Offer, "id"> = {
   notes: "",
 }
 
-export function OffersWorkspace() {
-  const [offers, setOffers] = useState<Offer[]>(mockOffers)
+export function OffersWorkspace({ initialOffers }: { initialOffers: Offer[] }) {
+  const [offers, setOffers] = useState<Offer[]>(initialOffers)
   const [query, setQuery] = useState("")
   const [status, setStatus] = useState<OfferStatus | "All">("All")
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null)

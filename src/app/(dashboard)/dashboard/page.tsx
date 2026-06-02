@@ -24,7 +24,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { discoverJobs } from "@/features/jobs/engine";
-import { getAggregatedJobSources } from "@/features/jobs/mock-sources";
+import { getAggregatedJobSourcesForProfile } from "@/features/jobs/queries";
+import { getPipelineCardsForProfile } from "@/features/offers/queries";
 import {
   createDemoProfile,
   getOrCreateProfileResultByClerkId,
@@ -133,7 +134,7 @@ type DashboardNoticeData = {
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
-function DashboardContent({
+async function DashboardContent({
   profile,
   notice,
 }: {
@@ -142,7 +143,15 @@ function DashboardContent({
 }) {
   const safeProfile = normalizeProfile(profile);
   const targetRole = safeProfile.target_role;
-  const discovery = discoverJobs(getAggregatedJobSources(targetRole), {
+  const profileId = safeProfile.id === "demo-profile" ? null : safeProfile.id;
+  const [jobSources, applicationCards] = await Promise.all([
+    getAggregatedJobSourcesForProfile({
+      profileId,
+      targetRole,
+    }),
+    getPipelineCardsForProfile(profileId),
+  ]);
+  const discovery = discoverJobs(jobSources, {
     targetRole,
     skills: safeProfile.skills,
     location: safeProfile.location,
@@ -160,12 +169,12 @@ function DashboardContent({
     { label: "Signal clarity", value: "78", detail: "Projects can be sharper" },
   ];
 
-  const applications = [
-    { company: "Vanta", role: targetRole, status: "Recommended", date: "Today" },
-    { company: "Stripe", role: `Senior ${targetRole}`, status: "Resume review", date: "Next" },
-    { company: "Linear", role: `${targetRole} Lead`, status: "Interview prep", date: "Queued" },
-    { company: "Ramp", role: targetRole, status: "Saved", date: "Draft" },
-  ];
+  const applications = applicationCards.slice(0, 4).map((application) => ({
+    company: application.company,
+    role: application.role,
+    status: application.stage,
+    date: application.due,
+  }));
 
   const activities = [
     {

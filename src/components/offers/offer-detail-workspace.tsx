@@ -9,13 +9,18 @@ import { PageHeader } from "@/components/dashboard/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { mockOffers } from "@/features/offers/data"
 import type { Offer } from "@/features/offers/types"
 
 const storageKey = "offerpilot.offers.v1"
 
-export function OfferDetailWorkspace({ fallbackOffer }: { fallbackOffer: Offer | null }) {
-  const [offer, setOffer] = useState<Offer | null>(fallbackOffer)
+export function OfferDetailWorkspace({
+  initialOffer,
+  relatedOffers,
+}: {
+  initialOffer: Offer | null
+  relatedOffers: Offer[]
+}) {
+  const [offer, setOffer] = useState<Offer | null>(initialOffer)
 
   useEffect(() => {
     const saved = window.localStorage.getItem(storageKey)
@@ -26,13 +31,13 @@ export function OfferDetailWorkspace({ fallbackOffer }: { fallbackOffer: Offer |
 
     try {
       const offers = JSON.parse(saved) as Offer[]
-      const localOffer = offers.find((item) => item.id === fallbackOffer?.id)
+      const localOffer = offers.find((item) => item.id === initialOffer?.id)
 
-      setOffer(localOffer ?? fallbackOffer)
+      setOffer(localOffer ?? initialOffer)
     } catch {
-      setOffer(fallbackOffer)
+      setOffer(initialOffer)
     }
-  }, [fallbackOffer])
+  }, [initialOffer])
 
   if (!offer) {
     return (
@@ -52,8 +57,6 @@ export function OfferDetailWorkspace({ fallbackOffer }: { fallbackOffer: Offer |
       </section>
     )
   }
-
-  const related = mockOffers.filter((item) => item.id !== offer.id).slice(0, 3)
 
   return (
     <section className="grid gap-6">
@@ -130,7 +133,7 @@ export function OfferDetailWorkspace({ fallbackOffer }: { fallbackOffer: Offer |
           <CardTitle>Nearby opportunities</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
-          {related.map((item) => (
+          {relatedOffers.map((item) => (
             <Link
               key={item.id}
               href={`/offers/${item.id}`}

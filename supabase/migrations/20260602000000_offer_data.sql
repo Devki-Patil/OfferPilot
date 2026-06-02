@@ -1,51 +1,3 @@
-create extension if not exists "pgcrypto";
-
-create table if not exists public.profiles (
-  id uuid primary key default gen_random_uuid(),
-  clerk_user_id text not null unique,
-  full_name text not null,
-  email text,
-  headline text,
-  target_role text not null,
-  salary_expectation text,
-  location text,
-  skills text[] not null default '{}',
-  experience jsonb not null default '[]'::jsonb,
-  projects jsonb not null default '[]'::jsonb,
-  links jsonb not null default '{}'::jsonb,
-  resume_path text,
-  onboarding_completed_at timestamptz,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create index if not exists profiles_clerk_user_id_idx on public.profiles (clerk_user_id);
-
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
-drop trigger if exists profiles_set_updated_at on public.profiles;
-create trigger profiles_set_updated_at
-before update on public.profiles
-for each row
-execute function public.set_updated_at();
-
-alter table public.profiles enable row level security;
-
-drop policy if exists "Service role can manage profiles" on public.profiles;
-create policy "Service role can manage profiles"
-on public.profiles
-for all
-using (auth.role() = 'service_role')
-with check (auth.role() = 'service_role');
-
 create table if not exists public.offers (
   id uuid primary key default gen_random_uuid(),
   profile_id uuid not null references public.profiles (id) on delete cascade,
@@ -66,10 +18,14 @@ create table if not exists public.offers (
   unique (profile_id, slug)
 );
 
-create index if not exists offers_profile_id_idx on public.offers (profile_id);
-create index if not exists offers_profile_status_idx on public.offers (profile_id, status);
+create index if not exists offers_profile_id_idx
+  on public.offers (profile_id);
+
+create index if not exists offers_profile_status_idx
+  on public.offers (profile_id, status);
 
 drop trigger if exists offers_set_updated_at on public.offers;
+
 create trigger offers_set_updated_at
 before update on public.offers
 for each row
@@ -78,6 +34,7 @@ execute function public.set_updated_at();
 alter table public.offers enable row level security;
 
 drop policy if exists "Service role can manage offers" on public.offers;
+
 create policy "Service role can manage offers"
 on public.offers
 for all
@@ -102,10 +59,14 @@ create table if not exists public.applications (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists applications_profile_id_idx on public.applications (profile_id);
-create index if not exists applications_profile_stage_idx on public.applications (profile_id, stage);
+create index if not exists applications_profile_id_idx
+  on public.applications (profile_id);
+
+create index if not exists applications_profile_stage_idx
+  on public.applications (profile_id, stage);
 
 drop trigger if exists applications_set_updated_at on public.applications;
+
 create trigger applications_set_updated_at
 before update on public.applications
 for each row
@@ -114,6 +75,7 @@ execute function public.set_updated_at();
 alter table public.applications enable row level security;
 
 drop policy if exists "Service role can manage applications" on public.applications;
+
 create policy "Service role can manage applications"
 on public.applications
 for all
@@ -149,10 +111,14 @@ create table if not exists public.saved_jobs (
   unique (profile_id, source, source_url)
 );
 
-create index if not exists saved_jobs_profile_id_idx on public.saved_jobs (profile_id);
-create index if not exists saved_jobs_profile_posted_at_idx on public.saved_jobs (profile_id, posted_at desc);
+create index if not exists saved_jobs_profile_id_idx
+  on public.saved_jobs (profile_id);
+
+create index if not exists saved_jobs_profile_posted_at_idx
+  on public.saved_jobs (profile_id, posted_at desc);
 
 drop trigger if exists saved_jobs_set_updated_at on public.saved_jobs;
+
 create trigger saved_jobs_set_updated_at
 before update on public.saved_jobs
 for each row
@@ -161,6 +127,7 @@ execute function public.set_updated_at();
 alter table public.saved_jobs enable row level security;
 
 drop policy if exists "Service role can manage saved jobs" on public.saved_jobs;
+
 create policy "Service role can manage saved jobs"
 on public.saved_jobs
 for all
@@ -183,10 +150,14 @@ create table if not exists public.resume_scores (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists resume_scores_profile_id_idx on public.resume_scores (profile_id);
-create index if not exists resume_scores_profile_created_at_idx on public.resume_scores (profile_id, created_at desc);
+create index if not exists resume_scores_profile_id_idx
+  on public.resume_scores (profile_id);
+
+create index if not exists resume_scores_profile_created_at_idx
+  on public.resume_scores (profile_id, created_at desc);
 
 drop trigger if exists resume_scores_set_updated_at on public.resume_scores;
+
 create trigger resume_scores_set_updated_at
 before update on public.resume_scores
 for each row
@@ -195,6 +166,7 @@ execute function public.set_updated_at();
 alter table public.resume_scores enable row level security;
 
 drop policy if exists "Service role can manage resume scores" on public.resume_scores;
+
 create policy "Service role can manage resume scores"
 on public.resume_scores
 for all
